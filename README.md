@@ -71,7 +71,7 @@ Endpoints used:
 These are `POST` endpoints, so visiting them directly in a browser tab will show an "Endpoint does not exist" error — that's expected, not a bug. To test one manually, send a `POST` request with a JSON body using Postman (or similar), for example:
 
 ```text
-POST https://task-79s6.onrender.com/api/auth/forgot-password
+POST https://task-79s6.onrender.com/api/api/auth/forgot-password
 Body (JSON): { "email": "you@example.com" }
 ```
 

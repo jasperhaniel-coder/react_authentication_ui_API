@@ -1,6 +1,6 @@
 // Small, plain validation helpers shared by every form. Keeping them
-// here (instead of copy-pasting regex into each page) means the rules
-// only need to change in one place.
+// here (instead of copy-pasting regex into each page) so that the rules
+// only need to be change in one place.
 
 export function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -14,7 +14,7 @@ export function isPasswordValid(password) {
   return password.length >= 8 && /\d/.test(password) && /[A-Z]/.test(password);
 }
 
-// Used to render the little checklist under password fields.
+// This is to render the little checklist under password fields.
 export function getPasswordChecklist(password) {
   return [
     { label: "At least 8 characters", passed: password.length >= 8 },
