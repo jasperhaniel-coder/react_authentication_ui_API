@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaCheckCircle } from "react-icons/fa";
 import AuthLayout from "../components/layout/AuthLayout";
+import InputField from "../components/form/InputField";
 import PasswordField from "../components/form/PasswordField";
 import PasswordChecklist from "../components/form/PasswordChecklist";
 import SubmitButton from "../components/form/SubmitButton";
@@ -11,8 +12,9 @@ import { isPasswordValid } from "../utils/validators";
 const ResetPassword = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { email, code, resetToken } = location.state || {};
+  const { email, token: returnedToken = "" } = location.state || {};
 
+  const [token, setToken] = useState(returnedToken);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
@@ -20,19 +22,9 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Same guard-clause idea as VerifyOtp.jsx: this page only makes
-  // sense and works right after a verified OTP handed us an email, so if that
-  // context is missing, send the user back to start the flow properly.
-  useEffect(() => {
-    if (!email) {
-      navigate("/forgot-password", { replace: true });
-    }
-  }, [email, navigate]);
-
-  if (!email) return null;
-
   function validate() {
     const nextErrors = {};
+    if (!token.trim()) nextErrors.token = "Enter the reset token from the API response or email.";
     if (!isPasswordValid(password)) {
       nextErrors.password = "Password doesn't meet the requirements below.";
     }
@@ -50,7 +42,7 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-      await resetPassword({ email, password, code, resetToken });
+      await resetPassword({ token: token.trim(), newPassword: password });
       setSuccess(true);
     } catch (err) {
       setFormError(err.message || "Something went wrong. Please try again.");
@@ -80,9 +72,22 @@ const ResetPassword = () => {
   }
 
   return (
-    <AuthLayout title="Set a new password" subtitle={`Choose a new password for ${email}.`}>
+    <AuthLayout
+      title="Set a new password"
+      subtitle={email ? `Choose a new password for ${email}.` : "Enter your reset token and choose a new password."}
+    >
       {formError && <div className="auth-alert auth-alert-error">{formError}</div>}
       <form onSubmit={handleSubmit} noValidate>
+        <InputField
+          id="reset-token"
+          label="Reset token"
+          type="password"
+          value={token}
+          onChange={(event) => setToken(event.target.value)}
+          placeholder="Paste the reset token from the API response or email"
+          error={errors.token}
+          autoFocus
+        />
         <PasswordField
           id="reset-password"
           label="New password"
@@ -90,7 +95,6 @@ const ResetPassword = () => {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Create a new password"
           error={errors.password}
-          autoFocus
         />
         <PasswordChecklist password={password} />
         <div className="mt-3">

@@ -7,17 +7,17 @@ export function isValidEmail(email) {
 }
 
 export function isValidPhoneNumber(phoneNumber) {
-  return /^\+?[1-9]\d{1,14}$/.test(phoneNumber);
+  return /^(?:\+?[1-9]\d{1,14}|0\d{10})$/.test(phoneNumber);
 }
 
 export function isPasswordValid(password) {
-  return password.length >= 8 && /\d/.test(password) && /[A-Z]/.test(password);
+  return password.length >= 6 && /\d/.test(password) && /[A-Z]/.test(password);
 }
 
 // This is to render the little checklist under password fields.
 export function getPasswordChecklist(password) {
   return [
-    { label: "At least 8 characters", passed: password.length >= 8 },
+    { label: "At least 6 characters", passed: password.length >= 6 },
     { label: "One number", passed: /\d/.test(password) },
     { label: "One uppercase letter", passed: /[A-Z]/.test(password) },
   ];

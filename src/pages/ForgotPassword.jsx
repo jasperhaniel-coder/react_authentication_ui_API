@@ -15,11 +15,7 @@ const ForgotPassword = () => {
   const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // After the request is successful, we don't move to another page immediately.
-    // Instead, we change this flag and show a "check your email" message here.
-    // This follows the assignment requirement to show a success message
-    // before the user goes to enter the code.
-    
+  // Show the API response before continuing to the password form.
   const [submitted, setSubmitted] = useState(false);
 
   const [resetToken, setResetToken] = useState(null);
@@ -45,16 +41,16 @@ const ForgotPassword = () => {
 
   if (submitted) {
     return (
-      <AuthLayout title="Check your email">
+      <AuthLayout title="Password reset requested">
         <div className="success-panel">
           <FaEnvelopeOpenText className="success-icon" />
-          <h2>Reset code sent</h2>
-          <p>We sent a 6-digit code to {email}. Enter it on the next screen.</p>
+          <h2>Continue with your reset token</h2>
+          <p>The API returned a reset token for {email}. Continue to choose a new password.</p>
           <button
             className="btn btn-primary submit-btn"
-            onClick={() => navigate("/verify-otp", { state: { email, context: "reset", resetToken } })}
+            onClick={() => navigate("/reset-password", { state: { email, token: resetToken } })}
           >
-            Enter code
+            Continue to reset password
           </button>
         </div>
       </AuthLayout>
@@ -64,7 +60,7 @@ const ForgotPassword = () => {
   return (
     <AuthLayout
       title="Forgot password"
-      subtitle="Enter your email and we'll send you a reset code."
+      subtitle="Enter your email to request a password reset token."
       footer={
         <Link to="/login" className="link-btn">
           Back to log in
@@ -83,7 +79,7 @@ const ForgotPassword = () => {
           error={error}
           autoFocus
         />
-        <SubmitButton loading={loading}>Send reset code</SubmitButton>
+        <SubmitButton loading={loading}>Request reset token</SubmitButton>
       </form>
     </AuthLayout>
   );

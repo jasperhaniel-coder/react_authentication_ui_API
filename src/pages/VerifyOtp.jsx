@@ -1,105 +1,96 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaRedo } from "react-icons/fa";
 import AuthLayout from "../components/layout/AuthLayout";
-import OtpInput from "../components/form/OtpInput";
+import InputField from "../components/form/InputField";
 import SubmitButton from "../components/form/SubmitButton";
-import { verifyOtp, resendOtp } from "../services/authService";
-
-
-// This page is shared by two flows: verifying a brand-new account
-// (after Register) and verifying identity before a password reset
-// (after ForgotPassword). Both pages n passes the email and context
-// through router state, so this page knows which email to verify and
-// which flow the user came from after the OTP is entered correctly.
-
-const OTP_LENGTH = 6;
+import { resendVerificationEmail, verifyEmail } from "../services/authService";
 
 const VerifyOtp = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { email, context, resetToken } = location.state || {};
+  const { email, token: returnedToken = "" } = location.state || {};
 
-  const [digits, setDigits] = useState(Array(OTP_LENGTH).fill(""));
+  const [token, setToken] = useState(returnedToken);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(30);
 
-  // Guard clause: if someone lands on /verify-otp directly (typing the
-  // URL, refreshing, etc.) there is no email/context to verify against,
-  // so send them back to the right starting page instead of showing an incomplete form.
-  
   useEffect(() => {
-    if (!email || !context) {
-      navigate("/login", { replace: true });
-    }
-  }, [email, context, navigate]);
-
-  // A simple countdown for the "resend code" button. The effect resets
-  // its own timer every second until cooldown reaches 0, and cleans up
-  // after itself so no timer keeps running after the component unmounts.
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    if (cooldown <= 0) return undefined;
+    const timer = setTimeout(() => setCooldown((current) => current - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  if (!email || !context) return null;
-
   async function handleSubmit(event) {
     event.preventDefault();
-    const code = digits.join("");
-    if (code.length < OTP_LENGTH) {
-      setError("Enter all 6 digits.");
+    const submittedToken = token.trim();
+    if (!submittedToken) {
+      setError("Enter the verification token from your email.");
       return;
     }
 
+    setError("");
     setLoading(true);
     try {
-      await verifyOtp({ email, code, context, resetToken });
-      if (context === "register") {
-        navigate("/login", { state: { notice: "Account verified. You can log in now." } });
-      } else {
-        navigate("/reset-password", { state: { email, code, resetToken } });
-      }
+      await verifyEmail({ token: submittedToken });
+      navigate("/login", { state: { notice: "Email verified. You can log in now." } });
     } catch (err) {
-      setError(err.message || "Verification failed. Please try again.");
+      setError(err.message || "Email verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleResend() {
+    if (!email) {
+      setError("Return to registration and enter your email to request a new verification email.");
+      return;
+    }
+
     setError("");
     try {
-      await resendOtp({ email });
+      const response = await resendVerificationEmail({ email });
+      setToken(response?.data?.verificationToken || "");
       setCooldown(30);
-      setDigits(Array(OTP_LENGTH).fill(""));
     } catch (err) {
-      setError(err.message || "Unable to resend the verification code.");
+      setError(err.message || "Unable to resend the verification email.");
     }
   }
 
   return (
-    <AuthLayout title="Verify your email" subtitle={`We sent a 6-digit code to ${email}.`}>
+    <AuthLayout
+      title="Verify your email"
+      subtitle={email ? `Enter the verification token sent to ${email}.` : "Enter your verification token."}
+    >
       <form onSubmit={handleSubmit} noValidate>
-        <OtpInput value={digits} onChange={setDigits} error={error} />
-        <SubmitButton loading={loading}>Verify code</SubmitButton>
+        <InputField
+          id="verification-token"
+          label="Verification token"
+          value={token}
+          onChange={(event) => setToken(event.target.value)}
+          placeholder="Paste the token from your email"
+          error={error}
+          autoFocus
+        />
+        <SubmitButton loading={loading}>Verify email</SubmitButton>
         <div className="row-between mt-3 mb-0">
+          <button type="button" className="link-btn" onClick={() => navigate("/register")}>
+            <FaArrowLeft className="me-1" /> Back
+          </button>
           <button
             type="button"
             className="link-btn"
-            onClick={() => navigate(context === "register" ? "/register" : "/forgot-password")}
+            disabled={cooldown > 0 || !email}
+            onClick={handleResend}
           >
-            <FaArrowLeft className="me-1" /> Back
-          </button>
-          <button type="button" className="link-btn" disabled={cooldown > 0} onClick={handleResend}>
-            <FaRedo className="me-1" /> {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+            <FaRedo className="me-1" />
+            {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend verification email"}
           </button>
         </div>
       </form>
     </AuthLayout>
   );
-}
+};
 
 export default VerifyOtp;

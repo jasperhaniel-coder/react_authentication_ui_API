@@ -66,7 +66,7 @@ const Register = () => {
 
     setLoading(true);
     try {
-      await registerUser({
+      const response = await registerUser({
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
@@ -74,11 +74,9 @@ const Register = () => {
         password: form.password,
       });
 
-   // This sends the email and context to the OTP page.
-      // The context tells the page why the user is entering the code,
-      // which is for verifying a brand-new account as opposed to a password reset, which uses the same page.
-
-      navigate("/verify-otp", { state: { email: form.email, context: "register" } });
+      navigate("/verify-otp", {
+        state: { email: form.email, token: response?.data?.verificationToken || "" },
+      });
     } catch (err) {
       setFormError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -135,7 +133,7 @@ const Register = () => {
           type="tel"
           value={form.phoneNumber}
           onChange={(e) => update("phoneNumber", e.target.value)}
-          placeholder="+234-123-456-7890"
+          placeholder="+2348012345678 or 08012345678"
           error={errors.phoneNumber}
         />
         <PasswordField

@@ -80,24 +80,24 @@ export async function requestPasswordReset({ email }) {
   return data;
 }
 
-export async function verifyOtp({ email, code, context, resetToken }) {
+export async function verifyEmail({ token }) {
   return request("/api/auth/verify-email", {
     method: "POST",
-    body: JSON.stringify({ email, code, otp: code, context, resetToken }),
-  }, "OTP verification failed.");
+    body: JSON.stringify({ token }),
+  }, "Email verification failed.");
 }
 
-export async function resendOtp({ email }) {
+export async function resendVerificationEmail({ email }) {
   return request("/api/auth/resend-verification", {
     method: "POST",
     body: JSON.stringify({ email }),
-  }, "Failed to resend verification code.");
+  }, "Failed to resend verification email.");
 }
 
-export async function resetPassword({ email, password, code, resetToken }) {
+export async function resetPassword({ token, newPassword }) {
   return request("/api/auth/reset-password", {
     method: "POST",
-    body: JSON.stringify({ email, password, code, otp: code, resetToken }),
+    body: JSON.stringify({ token, newPassword }),
   }, "Password reset failed.");
 }
 
